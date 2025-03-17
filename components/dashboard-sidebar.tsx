@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, Users, FileText, Settings, Home, LogOut } from "lucide-react"
+import { BarChart3, FileText, Settings, Home, LogOut, Users2 } from "lucide-react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 
@@ -32,7 +32,7 @@ export function DashboardSidebar() {
     {
       title: "Customers",
       href: "/customers",
-      icon: Users,
+      icon: Users2,
     },
     {
       title: "Reports",
