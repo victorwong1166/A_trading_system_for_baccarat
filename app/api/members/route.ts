@@ -1,56 +1,52 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { getAllMembers, getMembersWithDebt, createMember, searchMembers } from "@/lib/member-service"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { NextResponse } from "next/server"
+import { db } from "@/lib/db"
 
-export async function GET(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const body = await request.json()
+    const { name, email } = body
+
+    // Validate input
+    if (!name || !email) {
+      return NextResponse.json({ message: "姓名和Email為必填欄位" }, { status: 400 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const query = searchParams.get("query")
-    const withDebt = searchParams.get("withDebt") === "true"
+    // Check if member with email already exists
+    const existingMember = await db.member.findUnique({
+      where: { email },
+    })
 
-    let members
-    if (query) {
-      members = await searchMembers(query)
-    } else if (withDebt) {
-      members = await getMembersWithDebt()
-    } else {
-      members = await getAllMembers()
+    if (existingMember) {
+      return NextResponse.json({ message: "此Email已被使用" }, { status: 400 })
     }
 
-    return NextResponse.json(members)
+    // Create member
+    const member = await db.member.create({
+      data: {
+        name,
+        email,
+      },
+    })
+
+    return NextResponse.json(member, { status: 201 })
   } catch (error) {
-    console.error("Error in GET /api/members:", error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error occurred" },
-      { status: 500 },
-    )
+    console.error("Error creating member:", error)
+    return NextResponse.json({ message: "建立會員時發生錯誤" }, { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session || session.user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const members = await db.member.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    })
 
-    const data = await request.json()
-    const userId = session.user.id
-
-    const member = await createMember(data, userId)
-    return NextResponse.json(member, { status: 201 })
+    return NextResponse.json(members)
   } catch (error) {
-    console.error("Error in POST /api/members:", error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error occurred" },
-      { status: 500 },
-    )
+    console.error("Error fetching members:", error)
+    return NextResponse.json({ message: "獲取會員資料時發生錯誤" }, { status: 500 })
   }
 }
 

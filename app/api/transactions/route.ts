@@ -1,117 +1,51 @@
 import { NextResponse } from "next/server"
-import {
-  createTransaction,
-  getTransactions,
-  getTransactionById,
-  cancelTransaction,
-  getTransactionStats,
-} from "@/lib/transaction-service"
+import { db } from "@/lib/db"
 
-export async function GET(request) {
+export async function POST(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const recordId = searchParams.get("recordId")
+    const body = await request.json()
+    const { amount, description, date, type } = body
 
-    // 獲取單個交易記錄
-    if (recordId) {
-      const result = await getTransactionById(recordId)
-      return NextResponse.json(result)
+    // Validate input
+    if (!amount || !description || !date || !type) {
+      return NextResponse.json({ message: "缺少必要欄位" }, { status: 400 })
     }
 
-    // 獲取交易統計
-    if (searchParams.get("stats") === "true") {
-      const filters = {}
-
-      if (searchParams.get("memberId")) {
-        filters.memberId = searchParams.get("memberId")
-      }
-
-      if (searchParams.get("transactionType")) {
-        filters.transactionType = searchParams.get("transactionType")
-      }
-
-      if (searchParams.get("startDate")) {
-        filters.startDate = searchParams.get("startDate")
-      }
-
-      if (searchParams.get("endDate")) {
-        filters.endDate = searchParams.get("endDate")
-      }
-
-      const result = await getTransactionStats(filters)
-      return NextResponse.json(result)
+    // Convert amount to number
+    const amountNum = Number.parseFloat(amount)
+    if (isNaN(amountNum)) {
+      return NextResponse.json({ message: "金額必須為數字" }, { status: 400 })
     }
 
-    // 獲取交易列表
-    const limit = Number.parseInt(searchParams.get("limit") || "50")
-    const offset = Number.parseInt(searchParams.get("offset") || "0")
+    // Create transaction
+    const transaction = await db.transaction.create({
+      data: {
+        amount: amountNum,
+        description,
+        date: new Date(date),
+        type,
+      },
+    })
 
-    const filters = {}
-
-    if (searchParams.get("memberId")) {
-      filters.memberId = searchParams.get("memberId")
-    }
-
-    if (searchParams.get("transactionType")) {
-      filters.transactionType = searchParams.get("transactionType")
-    }
-
-    if (searchParams.get("status")) {
-      filters.status = searchParams.get("status")
-    }
-
-    if (searchParams.get("startDate")) {
-      filters.startDate = searchParams.get("startDate")
-    }
-
-    if (searchParams.get("endDate")) {
-      filters.endDate = searchParams.get("endDate")
-    }
-
-    const result = await getTransactions(limit, offset, filters)
-    return NextResponse.json(result)
+    return NextResponse.json(transaction, { status: 201 })
   } catch (error) {
-    console.error("處理交易API請求失敗:", error)
-    return NextResponse.json({ success: false, error: error.message || "處理請求失敗" }, { status: 500 })
+    console.error("Error creating transaction:", error)
+    return NextResponse.json({ message: "建立交易時發生錯誤" }, { status: 500 })
   }
 }
 
-export async function POST(request) {
+export async function GET() {
   try {
-    const data = await request.json()
+    const transactions = await db.transaction.findMany({
+      orderBy: {
+        date: "desc",
+      },
+    })
 
-    // 創建新交易
-    const result = await createTransaction(data)
-
-    return NextResponse.json(result)
+    return NextResponse.json(transactions)
   } catch (error) {
-    console.error("創建交易失敗:", error)
-    return NextResponse.json({ success: false, error: error.message || "創建交易失敗" }, { status: 500 })
-  }
-}
-
-export async function PATCH(request) {
-  try {
-    const data = await request.json()
-    const { recordId, ...updateData } = data
-
-    if (!recordId) {
-      return NextResponse.json({ success: false, error: "缺少交易ID" }, { status: 400 })
-    }
-
-    // 取消交易
-    if (data.action === "cancel") {
-      const result = await cancelTransaction(recordId, {
-        canceledBy: data.canceledBy,
-        cancelReason: data.cancelReason,
-      })
-      return NextResponse.json(result)
-    }
-
-    return NextResponse.json({ success: false, error: "不支持的操作" }, { status: 400 })
-  } catch (error) {
-    console.error("更新交易失敗:", error)
-    return NextResponse.json({ success: false, error: error.message || "更新交易失敗" }, { status: 500 })
+    console.error("Error fetching transactions:", error)
+    return NextResponse.json({ message: "獲取交易資料時發生錯誤" }, { status: 500 })
   }
 }
 

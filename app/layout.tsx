@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 import { UpdateNotification } from "@/components/update-notification"
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
+import { Toaster } from "@/components/toaster"
 
 export const metadata: Metadata = {
   title: "交易系統",
@@ -28,6 +29,7 @@ export default function RootLayout({
       </head>
       <body>
         {children}
+        <Toaster />
         <UpdateNotification />
         <PWAInstallPrompt />
       </body>

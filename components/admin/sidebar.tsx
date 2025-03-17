@@ -3,25 +3,11 @@
 import type React from "react"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Home, Database, Users, DollarSign, Settings, LogOut } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { Home, Database, Users, DollarSign, Settings, ExternalLink } from "lucide-react"
 
 export default function AdminSidebar() {
   const pathname = usePathname()
-  const router = useRouter()
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/admin/logout", {
-        method: "POST",
-      })
-      router.push("/admin/login")
-      router.refresh()
-    } catch (error) {
-      console.error("登出錯誤:", error)
-    }
-  }
 
   const isActive = (path: string) => {
     return pathname === path || pathname.startsWith(`${path}/`)
@@ -31,6 +17,9 @@ export default function AdminSidebar() {
     <div className="w-64 bg-gray-900 text-white min-h-screen p-4">
       <div className="text-xl font-bold mb-8 p-2">百家樂系統管理</div>
       <nav className="space-y-2">
+        <NavItem href="/" icon={<ExternalLink size={20} />} active={false}>
+          返回前台
+        </NavItem>
         <NavItem href="/admin" icon={<Home size={20} />} active={isActive("/admin") && pathname === "/admin"}>
           儀表板
         </NavItem>
@@ -47,12 +36,6 @@ export default function AdminSidebar() {
           系統設置
         </NavItem>
       </nav>
-      <div className="absolute bottom-4 left-4 right-4">
-        <Button variant="outline" className="w-full text-white border-white hover:bg-gray-800" onClick={handleLogout}>
-          <LogOut size={18} className="mr-2" />
-          登出
-        </Button>
-      </div>
     </div>
   )
 }
