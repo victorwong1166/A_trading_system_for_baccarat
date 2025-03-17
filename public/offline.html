@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>離線 - 交易系統</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      background-color: #f9fafb;
+      color: #1f2937;
+    }
+    .container {
+      max-width: 500px;
+      padding: 30px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      margin-bottom: 16px;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    p {
+      margin-bottom: 24px;
+      color: #4b5563;
+      line-height: 1.5;
+    }
+    button {
+      background-color: #6366f1;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #4f46e5;
+    }
+    .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📶</div>
+    <h1>您目前處於離線狀態</h1>
+    <p>無法連接到交易系統。請檢查您的網絡連接，然後重試。</p>
+    <p>部分功能在離線模式下可能仍然可用。</p>
+    <button onclick="window.location.reload()">重新連接</button>
+  </div>
+</body>
+</html>
+
