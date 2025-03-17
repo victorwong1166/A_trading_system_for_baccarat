@@ -112,7 +112,7 @@ export async function GET(request: Request) {
           if (table.exists) {
             try {
               logs.push(`Dropping table: ${table.name}`)
-              await sql.unsafe(`DROP TABLE IF EXISTS ${table.name} CASCADE`)
+              await sql`DROP TABLE IF EXISTS ${sql.identifier(table.name)} CASCADE`
               table.exists = false
             } catch (error) {
               const errorMsg = `Error dropping table ${table.name}: ${error instanceof Error ? error.message : String(error)}`
@@ -129,7 +129,8 @@ export async function GET(request: Request) {
         if (!table.exists) {
           try {
             logs.push(`Creating table: ${table.name}`)
-            await sql.unsafe(table.createSql)
+            // 使用模板字符串而不是 unsafe 方法
+            await sql`${sql.raw(table.createSql)}`
             createdTables.push(table.name)
           } catch (error) {
             const errorMsg = `Error creating table ${table.name}: ${error instanceof Error ? error.message : String(error)}`
@@ -184,12 +185,12 @@ export async function GET(request: Request) {
           try {
             // 檢查表是否為空
             logs.push(`Checking if ${data.table} is empty...`)
-            const countResult = await sql.unsafe(data.checkSql)
+            const countResult = await sql`${sql.raw(data.checkSql)}`
             const count = Number.parseInt(countResult[0]?.count || "0")
 
             if (count === 0 || force) {
               logs.push(`Adding sample data to ${data.table}`)
-              await sql.unsafe(data.insertSql)
+              await sql`${sql.raw(data.insertSql)}`
               populatedTables.push(data.table)
             } else {
               logs.push(`Table ${data.table} already has data, skipping`)
