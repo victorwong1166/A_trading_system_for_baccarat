@@ -189,3 +189,23 @@ export const settlementAccounts = pgTable("settlement_accounts", {
   closingBalance: decimal("closing_balance", { precision: 10, scale: 2 }).notNull(),
 })
 
+// 現金賬戶表 - 新增
+export const cashAccounts = pgTable("cash_accounts", {
+  id: serial("id").primaryKey(),
+  balance: decimal("balance", { precision: 15, scale: 2 }).notNull().default("0"),
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+})
+
+// 現金交易記錄表 - 新增
+export const cashTransactions = pgTable("cash_transactions", {
+  id: serial("id").primaryKey(),
+  transactionId: integer("transaction_id").references(() => transactions.id),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  balanceBefore: decimal("balance_before", { precision: 15, scale: 2 }).notNull(),
+  balanceAfter: decimal("balance_after", { precision: 15, scale: 2 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // buy_chips, redeem_chips, etc.
+  notes: text("notes"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+})
+
