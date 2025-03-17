@@ -1,6 +1,6 @@
 import { db } from "./db"
-import { sql } from "drizzle-orm"
 import { nanoid } from "nanoid"
+import { sql } from "@vercel/postgres"
 
 // 獲取最新期數
 export async function getLatestPeriodNumber() {
