@@ -29,22 +29,32 @@ export async function testDatabaseConnection() {
   }
 }
 
-// 新增函數來檢查表結構
 export async function checkTableStructure() {
   try {
     const sql = neon(process.env.DATABASE_URL!)
 
-    // 檢查 transactions 表的結構
+    // 檢查所有表的結構
     const result = await sql`
-      SELECT column_name, data_type 
-      FROM information_schema.columns 
-      WHERE table_name = 'transactions'
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
     `
+
+    // 獲取每個表的列信息
+    const tables = {}
+    for (const table of result) {
+      const columns = await sql`
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = ${table.table_name}
+      `
+      tables[table.table_name] = columns
+    }
 
     return {
       success: true,
-      message: "表結構檢查成功",
-      columns: result,
+      message: "所有表結構檢查成功",
+      tables,
     }
   } catch (error) {
     console.error("表結構檢查失敗:", error)
@@ -60,11 +70,28 @@ export async function addTestRecord() {
   try {
     const sql = neon(process.env.DATABASE_URL!)
 
-    // 使用更通用的插入方式，不指定具體的列名
-    // 我們會根據檢查表結構的結果來更新這個函數
+    // 使用正確的列名插入數據
     const result = await sql`
-      INSERT INTO transactions (game_type, table_number, amount, note, created_at)
-      VALUES ('Test', '測試', 100, '測試記錄', NOW())
+      INSERT INTO transactions (
+        customer_id, 
+        amount, 
+        created_at, 
+        updated_at, 
+        description, 
+        customer_name, 
+        status, 
+        type
+      )
+      VALUES (
+        1, 
+        100, 
+        NOW(), 
+        NOW(), 
+        '測試記錄', 
+        '測試客戶', 
+        '已完成', 
+        '測試'
+      )
       RETURNING *
     `
 
