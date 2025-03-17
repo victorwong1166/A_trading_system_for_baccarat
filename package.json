@@ -90,7 +90,8 @@
     "drizzle-orm": "latest",
     "nanoid": "latest",
     "next-pwa": "latest",
-    "next-auth": "latest"
+    "next-auth": "latest",
+    "bcryptjs": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

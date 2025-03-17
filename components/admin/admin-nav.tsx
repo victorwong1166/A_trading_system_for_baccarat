@@ -3,9 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Users, Settings, FileText, CreditCard, BarChart4, LogOut } from "lucide-react"
-import { signOut } from "next-auth/react"
-import { Button } from "@/components/ui/button"
+import { LayoutDashboard, Users, Settings, FileText, Database, CreditCard, BarChart4 } from "lucide-react"
 
 const navItems = [
   {
@@ -43,6 +41,11 @@ const navItems = [
     href: "/admin/logs",
     icon: FileText,
   },
+  {
+    title: "數據庫連接",
+    href: "/admin/database",
+    icon: Database,
+  },
 ]
 
 export function AdminNav() {
@@ -65,17 +68,6 @@ export function AdminNav() {
           {item.title}
         </Link>
       ))}
-
-      <div className="pt-4 mt-4 border-t">
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-muted-foreground hover:bg-muted hover:text-foreground"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-        >
-          <LogOut className="mr-3 h-5 w-5" />
-          登出系統
-        </Button>
-      </div>
     </nav>
   )
 }

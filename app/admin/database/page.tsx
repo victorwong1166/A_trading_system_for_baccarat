@@ -1,19 +1,18 @@
-import type { Metadata } from "next"
-import DatabaseManagement from "@/components/admin/database-management"
-
-export const metadata: Metadata = {
-  title: "數據庫管理 | 管理後台",
-  description: "百家樂交易系統數據庫管理",
-}
-
 export default function DatabasePage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium">數據庫管理</h3>
-        <p className="text-sm text-muted-foreground">管理系統數據庫，執行備份和恢復操作</p>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">數據庫連接</h1>
       </div>
-      <DatabaseManagement />
+
+      <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div className="p-6">
+          <h3 className="text-lg font-medium">數據庫狀態</h3>
+          <div className="mt-4">
+            <p className="text-muted-foreground">數據庫連接功能正在開發中...</p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

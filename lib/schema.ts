@@ -123,18 +123,19 @@ export const usersRelations = relations(users, ({ many }) => ({
 }))
 
 // 系統設置表
-export const settings = pgTable("settings", {
+export const systemSettings = pgTable("settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
   description: text("description"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   updatedBy: uuid("updated_by").references(() => users.id),
+  category: text("category"),
 })
 
 // 設置關係
-export const settingsRelations = relations(settings, ({ one }) => ({
+export const settingsRelations = relations(systemSettings, ({ one }) => ({
   updater: one(users, {
-    fields: [settings.updatedBy],
+    fields: [systemSettings.updatedBy],
     references: [users.id],
   }),
 }))
@@ -181,5 +182,17 @@ export const transactionRecords = pgTable("transaction_records", {
   canceledAt: timestamp("canceled_at"),
   canceledBy: integer("canceled_by").references(() => users.id),
   cancelReason: text("cancel_reason"),
+})
+
+// 系統日誌表
+export const systemLogs = pgTable("system_logs", {
+  id: serial("id").primaryKey(),
+  userId: uuid("user_id").references(() => users.id),
+  action: text("action").notNull(),
+  details: text("details"),
+  ipAddress: text("ip_address"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  level: text("level").notNull(), // Added level column
+  message: text("message").notNull(), // Added message column
 })
 

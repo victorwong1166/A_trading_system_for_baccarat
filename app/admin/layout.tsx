@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { AdminNav } from "@/components/admin/admin-nav"
 
@@ -13,8 +13,16 @@ export default async function AdminLayout({
     const session = await getServerSession(authOptions)
 
     // 檢查用戶是否已登入且具有管理員權限
-    if (!session || session.user.role !== "admin") {
+    if (!session) {
       redirect("/login?callbackUrl=/admin")
+    }
+
+    // 在開發環境中，允許任何登入用戶訪問管理頁面
+    // 在生產環境中，應該嚴格檢查角色
+    const isAdmin = process.env.NODE_ENV === "development" || session.user.role === "admin"
+
+    if (!isAdmin) {
+      redirect("/login?callbackUrl=/admin&error=unauthorized")
     }
 
     return (

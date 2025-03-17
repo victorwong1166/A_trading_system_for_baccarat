@@ -1,118 +1,114 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { useToast } from "@/hooks/use-toast"
-import { RefreshCw, Lock } from "lucide-react"
-
-// 表單驗證模式
-const loginFormSchema = z.object({
-  username: z.string().min(1, "請輸入用戶名"),
-  password: z.string().min(1, "請輸入密碼"),
-})
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2 } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get("callbackUrl") || "/admin"
-  const { toast } = useToast()
+  const callbackUrl = searchParams?.get("callbackUrl") || "/admin"
+  const error = searchParams?.get("error")
+
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [loginError, setLoginError] = useState("")
 
-  // 表單
-  const form = useForm<z.infer<typeof loginFormSchema>>({
-    resolver: zodResolver(loginFormSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-    },
-  })
-
-  // 提交表單
-  async function onSubmit(values: z.infer<typeof loginFormSchema>) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setIsLoading(true)
+    setLoginError("")
+
     try {
       const result = await signIn("credentials", {
-        username: values.username,
-        password: values.password,
+        username,
+        password,
         redirect: false,
       })
 
       if (result?.error) {
-        toast({
-          title: "登入失敗",
-          description: "用戶名或密碼錯誤",
-          variant: "destructive",
-        })
+        setLoginError("用戶名或密碼錯誤")
+        setIsLoading(false)
         return
       }
 
-      // 登入成功，重定向到回調 URL
       router.push(callbackUrl)
-      router.refresh()
     } catch (error) {
-      toast({
-        title: "登入失敗",
-        description: "發生錯誤，請稍後再試",
-        variant: "destructive",
-      })
-    } finally {
+      console.error("Login error:", error)
+      setLoginError("登入過程中發生錯誤，請稍後再試")
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/20">
+    <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">系統登入</CardTitle>
-          <CardDescription className="text-center">請輸入您的用戶名和密碼登入系統</CardDescription>
+          <CardTitle className="text-2xl font-bold">後台管理系統</CardTitle>
+          <CardDescription>請輸入您的用戶名和密碼登入系統</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>用戶名</FormLabel>
-                    <FormControl>
-                      <Input placeholder="輸入用戶名" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>密碼</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="輸入密碼" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          {(error || loginError) && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                {error === "unauthorized"
+                  ? "您沒有權限訪問管理頁面"
+                  : error === "session"
+                    ? "會話已過期，請重新登入"
+                    : loginError || "登入失敗，請檢查您的憑據"}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">用戶名</Label>
+                <Input
+                  id="username"
+                  placeholder="請輸入用戶名"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">密碼</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="請輸入密碼"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Lock className="h-4 w-4 mr-2" />}
-                登入
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    登入中...
+                  </>
+                ) : (
+                  "登入"
+                )}
               </Button>
-            </form>
-          </Form>
+            </div>
+          </form>
         </CardContent>
-        <CardFooter className="flex flex-col">
-          <p className="text-xs text-center text-muted-foreground mt-4">測試帳號: admin / 密碼: admin</p>
+        <CardFooter>
+          <div className="text-sm text-muted-foreground">
+            測試帳號：用戶名 <span className="font-mono">admin</span>，密碼 <span className="font-mono">admin</span>
+          </div>
         </CardFooter>
       </Card>
     </div>
