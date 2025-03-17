@@ -1,12 +1,21 @@
-let userConfig = undefined
+import withPWA from 'next-pwa';
+
+let userConfig = undefined;
 try {
-  userConfig = await import('./v0-user-next.config')
+  const userConfigModule = await import('./v0-user-next.config.mjs');
+  userConfig = userConfigModule.default;
 } catch (e) {
   // ignore error
 }
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig = withPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development'
+})({
+  reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -20,14 +29,12 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
-  },
-}
-
-mergeConfig(nextConfig, userConfig)
+  }
+});
 
 function mergeConfig(nextConfig, userConfig) {
   if (!userConfig) {
-    return
+    return;
   }
 
   for (const key in userConfig) {
@@ -38,11 +45,13 @@ function mergeConfig(nextConfig, userConfig) {
       nextConfig[key] = {
         ...nextConfig[key],
         ...userConfig[key],
-      }
+      };
     } else {
-      nextConfig[key] = userConfig[key]
+      nextConfig[key] = userConfig[key];
     }
   }
 }
 
-export default nextConfig
+mergeConfig(nextConfig, userConfig);
+
+export default nextConfig;
