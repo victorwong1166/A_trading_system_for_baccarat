@@ -1,9 +1,8 @@
 import withPWA from 'next-pwa';
 
-let userConfig = undefined;
+let userConfig = undefined
 try {
-  const userConfigModule = await import('./v0-user-next.config.mjs');
-  userConfig = userConfigModule.default;
+  userConfig = await import('./v0-user-next.config')
 } catch (e) {
   // ignore error
 }
@@ -32,9 +31,11 @@ const nextConfig = withPWA({
   }
 });
 
+mergeConfig(nextConfig, userConfig)
+
 function mergeConfig(nextConfig, userConfig) {
   if (!userConfig) {
-    return;
+    return
   }
 
   for (const key in userConfig) {
@@ -45,13 +46,11 @@ function mergeConfig(nextConfig, userConfig) {
       nextConfig[key] = {
         ...nextConfig[key],
         ...userConfig[key],
-      };
+      }
     } else {
-      nextConfig[key] = userConfig[key];
+      nextConfig[key] = userConfig[key]
     }
   }
 }
-
-mergeConfig(nextConfig, userConfig);
 
 export default nextConfig;
