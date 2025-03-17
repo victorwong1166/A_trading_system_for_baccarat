@@ -1,4 +1,7 @@
-import postgres from "postgres"
+import { neon, neonConfig } from "@neondatabase/serverless"
+
+// 配置 neon
+neonConfig.fetchConnectionCache = true
 
 // 確定使用哪個環境變數
 const connectionString =
@@ -12,15 +15,8 @@ if (!connectionString) {
   console.warn("No database connection string found in environment variables")
 }
 
-// 創建 SQL 客戶端
-const sql = connectionString
-  ? postgres(connectionString, {
-      ssl: { rejectUnauthorized: false }, // 允許自簽名證書
-      max: 10, // 連接池大小
-      idle_timeout: 20, // 空閒連接超時（秒）
-      connect_timeout: 10, // 連接超時（秒）
-    })
-  : postgres("") // 空字符串作為後備，但這會在實際使用時失敗
+// 創建 neon SQL 客戶端
+const sql = connectionString ? neon(connectionString) : neon("") // 空字符串作為後備，但這會在實際使用時失敗
 
 // 導出 SQL 客戶端
 export default sql
@@ -35,6 +31,9 @@ export async function testConnection() {
     return {
       connected: true,
       timestamp: result[0]?.now || new Date().toISOString(),
+      connectionString: connectionString
+        ? `${connectionString.split("@")[0].split(":")[0]}:***@${connectionString.split("@")[1]}`
+        : null,
     }
   } catch (error) {
     console.error("Database connection error:", error)
