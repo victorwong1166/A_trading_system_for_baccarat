@@ -6,6 +6,7 @@ export const userStatusEnum = pgEnum("user_status", ["active", "inactive"])
 export const memberTypeEnum = pgEnum("member_type", ["shareholder", "agent", "regular"])
 export const transactionTypeEnum = pgEnum("transaction_type", ["buy_chips", "sell_chips", "sign_table", "dividend"])
 export const paymentMethodEnum = pgEnum("payment_method", ["cash", "bank", "wechat", "alipay"])
+export const transactionStatusEnum = pgEnum("transaction_status", ["active", "canceled", "pending", "completed"])
 
 // 用戶表 (系統用戶)
 export const users = pgTable("users", {
@@ -48,6 +49,10 @@ export const transactions = pgTable("transactions", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   paymentMethod: paymentMethodEnum("payment_method"),
   notes: text("notes"),
+  status: transactionStatusEnum("status").notNull().default("active"), // 新增狀態欄位
+  canceledAt: timestamp("canceled_at"), // 新增取消時間
+  canceledBy: integer("canceled_by").references(() => users.id), // 新增取消人
+  cancelReason: text("cancel_reason"), // 新增取消原因
   createdBy: integer("created_by")
     .references(() => users.id)
     .notNull(),
@@ -189,14 +194,14 @@ export const settlementAccounts = pgTable("settlement_accounts", {
   closingBalance: decimal("closing_balance", { precision: 10, scale: 2 }).notNull(),
 })
 
-// 現金賬戶表 - 新增
+// 現金賬戶表
 export const cashAccounts = pgTable("cash_accounts", {
   id: serial("id").primaryKey(),
   balance: decimal("balance", { precision: 15, scale: 2 }).notNull().default("0"),
   lastUpdated: timestamp("last_updated").defaultNow().notNull(),
 })
 
-// 現金交易記錄表 - 新增
+// 現金交易記錄表
 export const cashTransactions = pgTable("cash_transactions", {
   id: serial("id").primaryKey(),
   transactionId: integer("transaction_id").references(() => transactions.id),
@@ -205,7 +210,30 @@ export const cashTransactions = pgTable("cash_transactions", {
   balanceAfter: decimal("balance_after", { precision: 15, scale: 2 }).notNull(),
   type: varchar("type", { length: 50 }).notNull(), // buy_chips, redeem_chips, etc.
   notes: text("notes"),
+  status: transactionStatusEnum("status").notNull().default("active"), // 新增狀態欄位
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+})
+
+// 交易記錄表 - 新增
+export const transactionRecords = pgTable("transaction_records", {
+  id: serial("id").primaryKey(),
+  recordId: varchar("record_id", { length: 30 }).notNull().unique(),
+  transactionType: varchar("transaction_type", { length: 50 }).notNull(), // buy, redeem, sign, return, etc.
+  memberId: varchar("member_id", { length: 20 }),
+  memberName: varchar("member_name", { length: 100 }),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  projectId: varchar("project_id", { length: 50 }),
+  projectName: varchar("project_name", { length: 100 }),
+  description: text("description"),
+  status: transactionStatusEnum("status").notNull().default("active"),
+  canceledAt: timestamp("canceled_at"),
+  canceledBy: integer("canceled_by").references(() => users.id),
+  cancelReason: text("cancel_reason"),
+  createdBy: integer("created_by")
+    .references(() => users.id)
+    .notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
 

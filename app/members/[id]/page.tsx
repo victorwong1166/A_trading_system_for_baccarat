@@ -1,22 +1,17 @@
 import type { Metadata } from "next"
-import DashboardHeader from "@/components/dashboard-header"
-import MemberDetails from "@/components/member-details"
-import MemberTransactions from "@/components/member-transactions"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { ArrowLeft, Edit, DollarSign, CreditCard, TrendingUp, TrendingDown } from "lucide-react"
+import MemberDetail from "@/components/members/member-detail"
 
 export const metadata: Metadata = {
-  title: "交易系統 - 會員詳情",
-  description: "交易系統會員詳情",
+  title: "會員詳情",
+  description: "查看會員詳細資料和交易記錄",
 }
 
-export default function MemberPage({ params }) {
+export default function MemberDetailPage({ params }: { params: { id: string } }) {
   const { id } = params
 
   return (
     <div className="flex min-h-screen flex-col">
-      <DashboardHeader />
+      {/* <DashboardHeader />
       <main className="flex-1 p-6">
         <div className="mb-6">
           <Link href="/members">
@@ -70,7 +65,10 @@ export default function MemberPage({ params }) {
             <MemberTransactions id={id} />
           </div>
         </div>
-      </main>
+      </main> */}
+      <div className="container mx-auto py-6">
+        <MemberDetail memberId={params.id} />
+      </div>
     </div>
   )
 }
