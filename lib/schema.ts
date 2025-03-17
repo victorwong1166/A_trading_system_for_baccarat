@@ -1,239 +1,185 @@
-import { pgTable, serial, text, varchar, timestamp, boolean, integer, decimal, pgEnum } from "drizzle-orm/pg-core"
+import { relations } from "drizzle-orm"
+import { pgTable, serial, text, timestamp, boolean, integer, uuid, decimal, pgEnum } from "drizzle-orm/pg-core"
 
-// 枚舉定義
-export const userRoleEnum = pgEnum("user_role", ["admin", "user"])
-export const userStatusEnum = pgEnum("user_status", ["active", "inactive"])
-export const memberTypeEnum = pgEnum("member_type", ["shareholder", "agent", "regular"])
-export const transactionTypeEnum = pgEnum("transaction_type", ["buy_chips", "sell_chips", "sign_table", "dividend"])
-export const paymentMethodEnum = pgEnum("payment_method", ["cash", "bank", "wechat", "alipay"])
-export const transactionStatusEnum = pgEnum("transaction_status", ["active", "canceled", "pending", "completed"])
+// 交易類型枚舉
+export const transactionTypeEnum = pgEnum("transaction_type", [
+  "deposit", // 存款
+  "withdrawal", // 取款
+  "transfer", // 轉賬
+  "bet", // 下注
+  "win", // 贏錢
+  "loss", // 輸錢
+  "commission", // 佣金
+  "adjustment", // 調整
+  "credit", // 信用
+  "repayment", // 還款
+  "buy_chips",
+  "redeem_chips",
+  "manual",
+])
 
-// 用戶表 (系統用戶)
+// 交易狀態枚舉
+export const transactionStatusEnum = pgEnum("transaction_status", [
+  "pending", // 待處理
+  "completed", // 已完成
+  "failed", // 失敗
+  "cancelled", // 已取消
+])
+
+// 會員類型枚舉
+export const memberTypeEnum = pgEnum("member_type", [
+  "regular", // 普通會員
+  "vip", // VIP會員
+  "agent", // 代理
+  "shareholder", // 股東
+])
+
+// 用戶角色枚舉
+export const userRoleEnum = pgEnum("user_role", [
+  "admin", // 管理員
+  "operator", // 操作員
+  "viewer", // 只讀用戶
+])
+
+// 會員表
+export const members = pgTable("members", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  memberId: text("member_id").notNull().unique(),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  type: memberTypeEnum("type").default("regular").notNull(),
+  balance: decimal("balance", { precision: 10, scale: 2 }).default("0").notNull(),
+  credit_limit: decimal("credit_limit", { precision: 10, scale: 2 }).default("0").notNull(),
+  parentId: uuid("parent_id").references(() => members.id),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isDeleted: boolean("is_deleted").default(false).notNull(),
+  notes: text("notes"),
+})
+
+// 會員關係
+export const membersRelations = relations(members, ({ one, many }) => ({
+  parent: one(members, {
+    fields: [members.parentId],
+    references: [members.id],
+  }),
+  children: many(members),
+  transactions: many(transactions),
+}))
+
+// 交易表
+export const transactions = pgTable("transactions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  memberId: uuid("member_id").references(() => members.id),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  type: transactionTypeEnum("type").notNull(),
+  status: transactionStatusEnum("status").default("completed").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: uuid("created_by")
+    .references(() => users.id)
+    .notNull(),
+  cancelledAt: timestamp("cancelled_at"),
+  cancelledBy: uuid("cancelled_by").references(() => users.id),
+  cancellationReason: text("cancellation_reason"),
+})
+
+// 交易關係
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  member: one(members, {
+    fields: [transactions.memberId],
+    references: [members.id],
+  }),
+  creator: one(users, {
+    fields: [transactions.createdBy],
+    references: [users.id],
+  }),
+  canceller: one(users, {
+    fields: [transactions.cancelledBy],
+    references: [users.id],
+  }),
+}))
+
+// 系統用戶表
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: varchar("username", { length: 50 }).notNull().unique(),
+  id: uuid("id").defaultRandom().primaryKey(),
+  username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  name: varchar("name", { length: 100 }).notNull(),
-  email: varchar("email", { length: 100 }),
-  role: userRoleEnum("role").notNull().default("user"),
-  status: userStatusEnum("status").notNull().default("active"),
+  name: text("name").notNull(),
+  role: userRoleEnum("role").default("operator").notNull(),
+  is_active: boolean("is_active").default(true).notNull(),
   lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
 
-// 會員表 (客戶)
-export const members = pgTable("members", {
-  id: serial("id").primaryKey(),
-  memberId: varchar("member_id", { length: 20 }).notNull().unique(),
-  name: varchar("name", { length: 100 }).notNull(),
-  phone: varchar("phone", { length: 20 }),
-  email: varchar("email", { length: 100 }),
-  address: text("address"),
-  type: memberTypeEnum("type").notNull().default("regular"),
-  agentId: integer("agent_id").references(() => members.id),
-  notes: text("notes"),
-  createdBy: integer("created_by").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-})
-
-// 交易表
-export const transactions = pgTable("transactions", {
-  id: serial("id").primaryKey(),
-  transactionId: varchar("transaction_id", { length: 20 }).notNull().unique(),
-  memberId: integer("member_id")
-    .references(() => members.id)
-    .notNull(),
-  type: transactionTypeEnum("type").notNull(),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  paymentMethod: paymentMethodEnum("payment_method"),
-  notes: text("notes"),
-  status: transactionStatusEnum("status").notNull().default("active"), // 新增狀態欄位
-  canceledAt: timestamp("canceled_at"), // 新增取消時間
-  canceledBy: integer("canceled_by").references(() => users.id), // 新增取消人
-  cancelReason: text("cancel_reason"), // 新增取消原因
-  createdBy: integer("created_by")
-    .references(() => users.id)
-    .notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-})
-
-// 簽單表
-export const signTables = pgTable("sign_tables", {
-  id: serial("id").primaryKey(),
-  tableId: varchar("table_id", { length: 20 }).notNull(),
-  memberId: integer("member_id")
-    .references(() => members.id)
-    .notNull(),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  status: varchar("status", { length: 20 }).notNull().default("open"),
-  settledAt: timestamp("settled_at"),
-  transactionId: integer("transaction_id").references(() => transactions.id),
-  createdBy: integer("created_by")
-    .references(() => users.id)
-    .notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-})
-
-// 分紅表
-export const dividends = pgTable("dividends", {
-  id: serial("id").primaryKey(),
-  dividendId: varchar("dividend_id", { length: 20 }).notNull().unique(),
-  totalProfit: decimal("total_profit", { precision: 10, scale: 2 }).notNull(),
-  totalShares: decimal("total_shares", { precision: 5, scale: 2 }).notNull(),
-  shareUnit: decimal("share_unit", { precision: 3, scale: 2 }).notNull(),
-  dividendPerUnit: decimal("dividend_per_unit", { precision: 10, scale: 2 }).notNull(),
-  notes: text("notes"),
-  createdBy: integer("created_by")
-    .references(() => users.id)
-    .notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-})
-
-// 分紅分配表
-export const dividendAllocations = pgTable("dividend_allocations", {
-  id: serial("id").primaryKey(),
-  dividendId: integer("dividend_id")
-    .references(() => dividends.id)
-    .notNull(),
-  memberId: integer("member_id")
-    .references(() => members.id)
-    .notNull(),
-  shares: decimal("shares", { precision: 5, scale: 2 }).notNull(),
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-})
+// 用戶關係
+export const usersRelations = relations(users, ({ many }) => ({
+  created_transactions: many(transactions, { relationName: "creator" }),
+  cancelled_transactions: many(transactions, { relationName: "canceller" }),
+}))
 
 // 系統設置表
 export const settings = pgTable("settings", {
-  id: serial("id").primaryKey(),
-  key: varchar("key", { length: 50 }).notNull().unique(),
+  key: text("key").primaryKey(),
   value: text("value").notNull(),
   description: text("description"),
-  updatedBy: integer("updated_by").references(() => users.id),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedBy: uuid("updated_by").references(() => users.id),
 })
 
-// 系統日誌表
-export const systemLogs = pgTable("system_logs", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  action: varchar("action", { length: 50 }).notNull(),
-  details: text("details"),
-  ipAddress: varchar("ip_address", { length: 50 }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-})
-
-// Telegram綁定表
-export const telegramBindings = pgTable("telegram_bindings", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id")
-    .references(() => users.id)
-    .notNull(),
-  chatId: varchar("chat_id", { length: 50 }).notNull().unique(),
-  bindCode: varchar("bind_code", { length: 10 }),
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-})
-
-// 網站表
-export const websites = pgTable("websites", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 100 }).notNull(),
-  domain: varchar("domain", { length: 100 }).notNull().unique(),
-  template: varchar("template", { length: 50 }).notNull(),
-  description: text("description"),
-  isActive: boolean("is_active").notNull().default(true),
-  settings: text("settings"),
-  createdBy: integer("created_by")
-    .references(() => users.id)
-    .notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-})
-
-// 結算表
-export const settlements = pgTable("settlements", {
-  id: serial("id").primaryKey(),
-  settlementId: varchar("settlement_id", { length: 20 }).notNull().unique(),
-  periodNumber: integer("period_number").notNull(), // 期數
-  date: timestamp("date").notNull(),
-  totalRevenue: decimal("total_revenue", { precision: 10, scale: 2 }).notNull(),
-  totalExpenses: decimal("total_expenses", { precision: 10, scale: 2 }).notNull(),
-  netProfit: decimal("net_profit", { precision: 10, scale: 2 }).notNull(),
-  notes: text("notes"),
-  createdBy: integer("created_by")
-    .references(() => users.id)
-    .notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-})
-
-// 結算詳情表
-export const settlementDetails = pgTable("settlement_details", {
-  id: serial("id").primaryKey(),
-  settlementId: integer("settlement_id")
-    .references(() => settlements.id)
-    .notNull(),
-  category: varchar("category", { length: 50 }).notNull(), // 例如: revenue_gaming, expense_staff 等
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  description: text("description"),
-})
-
-// 結算賬戶變動表
-export const settlementAccounts = pgTable("settlement_accounts", {
-  id: serial("id").primaryKey(),
-  settlementId: integer("settlement_id")
-    .references(() => settlements.id)
-    .notNull(),
-  accountType: varchar("account_type", { length: 50 }).notNull(), // 例如: cash, bank, receivables
-  openingBalance: decimal("opening_balance", { precision: 10, scale: 2 }).notNull(),
-  closingBalance: decimal("closing_balance", { precision: 10, scale: 2 }).notNull(),
-})
+// 設置關係
+export const settingsRelations = relations(settings, ({ one }) => ({
+  updater: one(users, {
+    fields: [settings.updatedBy],
+    references: [users.id],
+  }),
+}))
 
 // 現金賬戶表
 export const cashAccounts = pgTable("cash_accounts", {
   id: serial("id").primaryKey(),
-  balance: decimal("balance", { precision: 15, scale: 2 }).notNull().default("0"),
+  balance: decimal("balance", { precision: 10, scale: 2 }).notNull().default("0"),
   lastUpdated: timestamp("last_updated").defaultNow().notNull(),
 })
 
-// 現金交易記錄表
+// 現金交易表
 export const cashTransactions = pgTable("cash_transactions", {
   id: serial("id").primaryKey(),
-  transactionId: integer("transaction_id").references(() => transactions.id),
+  transactionId: integer("transaction_id").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  balanceBefore: decimal("balance_before", { precision: 15, scale: 2 }).notNull(),
-  balanceAfter: decimal("balance_after", { precision: 15, scale: 2 }).notNull(),
-  type: varchar("type", { length: 50 }).notNull(), // buy_chips, redeem_chips, etc.
+  balanceBefore: decimal("balance_before", { precision: 10, scale: 2 }).notNull(),
+  balanceAfter: decimal("balance_after", { precision: 10, scale: 2 }).notNull(),
+  type: text("type").notNull(),
   notes: text("notes"),
-  status: transactionStatusEnum("status").notNull().default("active"), // 新增狀態欄位
-  createdBy: integer("created_by").references(() => users.id),
+  createdBy: integer("created_by")
+    .references(() => users.id)
+    .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 })
 
-// 交易記錄表 - 新增
+// 交易記錄表
 export const transactionRecords = pgTable("transaction_records", {
   id: serial("id").primaryKey(),
-  recordId: varchar("record_id", { length: 30 }).notNull().unique(),
-  transactionType: varchar("transaction_type", { length: 50 }).notNull(), // buy, redeem, sign, return, etc.
-  memberId: varchar("member_id", { length: 20 }),
-  memberName: varchar("member_name", { length: 100 }),
+  recordId: text("record_id").notNull().unique(),
+  transactionType: text("transaction_type").notNull(),
+  memberId: text("member_id"),
+  memberName: text("member_name"),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  projectId: varchar("project_id", { length: 50 }),
-  projectName: varchar("project_name", { length: 100 }),
+  projectId: text("project_id"),
+  projectName: text("project_name"),
   description: text("description"),
-  status: transactionStatusEnum("status").notNull().default("active"),
-  canceledAt: timestamp("canceled_at"),
-  canceledBy: integer("canceled_by").references(() => users.id),
-  cancelReason: text("cancel_reason"),
+  status: text("status").notNull(),
   createdBy: integer("created_by")
     .references(() => users.id)
     .notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  canceledAt: timestamp("canceled_at"),
+  canceledBy: integer("canceled_by").references(() => users.id),
+  cancelReason: text("cancel_reason"),
 })
 

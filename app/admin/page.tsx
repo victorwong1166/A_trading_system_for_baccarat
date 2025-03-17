@@ -32,14 +32,16 @@ export default function AdminDashboard() {
     try {
       const response = await fetch("/api/admin/dashboard")
       if (!response.ok) {
-        throw new Error("Failed to fetch dashboard data")
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to fetch dashboard data")
       }
       const data = await response.json()
       setDashboardData(data)
     } catch (error) {
+      console.error("Dashboard fetch error:", error)
       toast({
         title: "獲取數據失敗",
-        description: "無法載入儀表板數據，請稍後再試",
+        description: error instanceof Error ? error.message : "無法載入儀表板數據，請稍後再試",
         variant: "destructive",
       })
     } finally {

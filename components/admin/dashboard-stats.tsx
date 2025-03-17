@@ -1,48 +1,5 @@
-import type React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, CreditCard, DollarSign, Activity, TrendingUp, AlertCircle } from "lucide-react"
-
-interface StatsCardProps {
-  title: string
-  value: string | number
-  description?: string
-  icon: React.ReactNode
-  trend?: "up" | "down" | "neutral"
-  trendValue?: string
-}
-
-function StatsCard({ title, value, description, icon, trend, trendValue }: StatsCardProps) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">{icon}</div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {description && <p className="text-xs text-muted-foreground">{description}</p>}
-        {trend && trendValue && (
-          <div className="flex items-center pt-1">
-            {trend === "up" ? (
-              <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-            ) : trend === "down" ? (
-              <TrendingUp className="h-4 w-4 text-red-500 mr-1 rotate-180" />
-            ) : (
-              <Activity className="h-4 w-4 text-yellow-500 mr-1" />
-            )}
-            <span
-              className={`text-xs ${
-                trend === "up" ? "text-green-500" : trend === "down" ? "text-red-500" : "text-yellow-500"
-              }`}
-            >
-              {trendValue}
-            </span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
+import { Users, CreditCard, DollarSign, TrendingUp, Calendar, AlertCircle } from "lucide-react"
 
 interface DashboardStatsProps {
   stats: {
@@ -58,42 +15,71 @@ interface DashboardStatsProps {
 export function DashboardStats({ stats }: DashboardStatsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <StatsCard
-        title="會員總數"
-        value={stats.memberCount}
-        icon={<Users className="h-4 w-4" />}
-        description="系統註冊會員總數"
-      />
-      <StatsCard
-        title="交易總數"
-        value={stats.transactionCount}
-        icon={<CreditCard className="h-4 w-4" />}
-        description="所有已完成交易"
-      />
-      <StatsCard
-        title="總營業額"
-        value={stats.totalRevenue}
-        icon={<DollarSign className="h-4 w-4" />}
-        description="所有已完成交易金額"
-      />
-      <StatsCard
-        title="今日交易"
-        value={stats.todayTransactions}
-        icon={<Activity className="h-4 w-4" />}
-        description="今日交易筆數"
-      />
-      <StatsCard
-        title="今日營業額"
-        value={stats.todayRevenue}
-        icon={<TrendingUp className="h-4 w-4" />}
-        description="今日交易金額"
-      />
-      <StatsCard
-        title="會員結欠總額"
-        value={stats.totalDebt}
-        icon={<AlertCircle className="h-4 w-4" />}
-        description="所有會員未結清金額"
-      />
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">會員總數</CardTitle>
+          <Users className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.memberCount}</div>
+          <p className="text-xs text-muted-foreground">活躍會員數量</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">交易總數</CardTitle>
+          <CreditCard className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.transactionCount}</div>
+          <p className="text-xs text-muted-foreground">所有已完成交易</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">總營業額</CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalRevenue}</div>
+          <p className="text-xs text-muted-foreground">所有已完成交易金額</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">今日交易</CardTitle>
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.todayTransactions}</div>
+          <p className="text-xs text-muted-foreground">今日交易數量</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">今日營業額</CardTitle>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.todayRevenue}</div>
+          <p className="text-xs text-muted-foreground">今日交易金額</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">會員結欠總額</CardTitle>
+          <AlertCircle className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalDebt}</div>
+          <p className="text-xs text-muted-foreground">所有會員結欠總額</p>
+        </CardContent>
+      </Card>
     </div>
   )
 }

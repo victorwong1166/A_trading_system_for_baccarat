@@ -1,14 +1,24 @@
 import { neon, neonConfig } from "@neondatabase/serverless"
+import { drizzle } from "drizzle-orm/postgres-js"
+import postgres from "postgres"
+import * as schema from "./schema"
 
 // 配置 neon
 neonConfig.fetchConnectionCache = true
 
-// 確定使用哪個環境變數
+// 使用環境變量中的數據庫連接字符串
 const connectionString =
   process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.POSTGRES_PRISMA_URL ||
-  process.env.POSTGRES_URL_NON_POOLING
+  process.env.POSTGRES_URL_NON_POOLING ||
+  ""
+
+// 創建 postgres 客戶端
+const client = postgres(connectionString)
+
+// 創建 drizzle 實例
+export const db = drizzle(client, { schema })
 
 // 如果沒有連接字符串，記錄警告
 if (!connectionString) {
@@ -34,7 +44,7 @@ sql.identifier = (name) => ({
 export default sql
 
 // 同時導出為 db，以便與現有代碼兼容
-export const db = sql
+// export const db = sql // Commenting out the original db export
 
 // 導出測試連接的函數
 export async function testConnection() {

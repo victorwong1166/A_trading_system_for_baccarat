@@ -5,85 +5,108 @@ import { formatCurrency } from "./utils"
 
 // 系統概覽統計
 export async function getDashboardStats() {
-  // 會員總數
-  const memberCount = await db.select({ count: count() }).from(members).where(eq(members.isDeleted, false))
+  try {
+    // 會員總數
+    const memberCount = await db.select({ count: count() }).from(members).where(eq(members.is_deleted, false))
 
-  // 交易總數
-  const transactionCount = await db.select({ count: count() }).from(transactions)
+    // 交易總數
+    const transactionCount = await db.select({ count: count() }).from(transactions)
 
-  // 總營業額
-  const totalRevenue = await db
-    .select({ total: sum(transactions.amount) })
-    .from(transactions)
-    .where(eq(transactions.status, "completed"))
+    // 總營業額
+    const totalRevenue = await db
+      .select({ total: sum(transactions.amount) })
+      .from(transactions)
+      .where(eq(transactions.status, "completed"))
 
-  // 今日交易數
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const todayTransactions = await db
-    .select({ count: count() })
-    .from(transactions)
-    .where(and(sql`DATE(${transactions.createdAt}) = DATE(${today})`, eq(transactions.status, "completed")))
+    // 今日交易數
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayTransactions = await db
+      .select({ count: count() })
+      .from(transactions)
+      .where(and(sql`DATE(${transactions.created_at}) = DATE(${today})`, eq(transactions.status, "completed")))
 
-  // 今日營業額
-  const todayRevenue = await db
-    .select({ total: sum(transactions.amount) })
-    .from(transactions)
-    .where(and(sql`DATE(${transactions.createdAt}) = DATE(${today})`, eq(transactions.status, "completed")))
+    // 今日營業額
+    const todayRevenue = await db
+      .select({ total: sum(transactions.amount) })
+      .from(transactions)
+      .where(and(sql`DATE(${transactions.created_at}) = DATE(${today})`, eq(transactions.status, "completed")))
 
-  // 會員結欠總額
-  const totalDebt = await db
-    .select({ total: sum(members.balance) })
-    .from(members)
-    .where(eq(members.isDeleted, false))
+    // 會員結欠總額
+    const totalDebt = await db
+      .select({ total: sum(members.balance) })
+      .from(members)
+      .where(eq(members.is_deleted, false))
 
-  return {
-    memberCount: memberCount[0]?.count || 0,
-    transactionCount: transactionCount[0]?.count || 0,
-    totalRevenue: formatCurrency(totalRevenue[0]?.total || 0),
-    todayTransactions: todayTransactions[0]?.count || 0,
-    todayRevenue: formatCurrency(todayRevenue[0]?.total || 0),
-    totalDebt: formatCurrency(totalDebt[0]?.total || 0),
+    return {
+      memberCount: memberCount[0]?.count || 0,
+      transactionCount: transactionCount[0]?.count || 0,
+      totalRevenue: formatCurrency(totalRevenue[0]?.total || 0),
+      todayTransactions: todayTransactions[0]?.count || 0,
+      todayRevenue: formatCurrency(todayRevenue[0]?.total || 0),
+      totalDebt: formatCurrency(totalDebt[0]?.total || 0),
+    }
+  } catch (error) {
+    console.error("Error in getDashboardStats:", error)
+    // 返回默認值，避免整個應用崩潰
+    return {
+      memberCount: 0,
+      transactionCount: 0,
+      totalRevenue: formatCurrency(0),
+      todayTransactions: 0,
+      todayRevenue: formatCurrency(0),
+      totalDebt: formatCurrency(0),
+    }
   }
 }
 
 // 獲取最近交易
 export async function getRecentTransactions(limit = 5) {
-  const recentTransactions = await db
-    .select({
-      id: transactions.id,
-      amount: transactions.amount,
-      type: transactions.type,
-      status: transactions.status,
-      createdAt: transactions.createdAt,
-      memberId: transactions.memberId,
-      memberName: members.name,
-    })
-    .from(transactions)
-    .leftJoin(members, eq(transactions.memberId, members.id))
-    .orderBy(desc(transactions.createdAt))
-    .limit(limit)
+  try {
+    const recentTransactions = await db
+      .select({
+        id: transactions.id,
+        amount: transactions.amount,
+        type: transactions.type,
+        status: transactions.status,
+        createdAt: transactions.created_at,
+        memberId: transactions.member_id,
+        memberName: members.name,
+      })
+      .from(transactions)
+      .leftJoin(members, eq(transactions.member_id, members.id))
+      .orderBy(desc(transactions.created_at))
+      .limit(limit)
 
-  return recentTransactions.map((tx) => ({
-    ...tx,
-    amount: formatCurrency(tx.amount),
-    createdAt: tx.createdAt.toLocaleString(),
-  }))
+    return recentTransactions.map((tx) => ({
+      ...tx,
+      amount: formatCurrency(tx.amount),
+      createdAt: tx.createdAt.toLocaleString(),
+    }))
+  } catch (error) {
+    console.error("Error in getRecentTransactions:", error)
+    return []
+  }
 }
 
 // 獲取系統用戶
 export async function getSystemUsers() {
-  return db
-    .select({
-      id: users.id,
-      username: users.username,
-      name: users.name,
-      role: users.role,
-      lastLogin: users.lastLogin,
-      isActive: users.isActive,
-    })
-    .from(users)
-    .orderBy(users.username)
+  try {
+    return db
+      .select({
+        id: users.id,
+        username: users.username,
+        name: users.name,
+        role: users.role,
+        lastLogin: users.last_login,
+        isActive: users.is_active,
+      })
+      .from(users)
+      .orderBy(users.username)
+  } catch (error) {
+    console.error("Error in getSystemUsers:", error)
+    return []
+  }
 }
 
 // 創建系統用戶
@@ -93,18 +116,23 @@ export async function createSystemUser(userData: {
   name: string
   role: string
 }) {
-  // 在實際應用中，應該對密碼進行加密
-  // 這裡簡化處理，實際應用請使用 bcrypt 等庫
-  return db
-    .insert(users)
-    .values({
-      username: userData.username,
-      password: userData.password, // 應該加密
-      name: userData.name,
-      role: userData.role,
-      isActive: true,
-    })
-    .returning()
+  try {
+    // 在實際應用中，應該對密碼進行加密
+    // 這裡簡化處理，實際應用請使用 bcrypt 等庫
+    return db
+      .insert(users)
+      .values({
+        username: userData.username,
+        password: userData.password, // 應該加密
+        name: userData.name,
+        role: userData.role as any,
+        is_active: true,
+      })
+      .returning()
+  } catch (error) {
+    console.error("Error in createSystemUser:", error)
+    throw error
+  }
 }
 
 // 更新系統用戶
@@ -113,21 +141,52 @@ export async function updateSystemUser(
   userData: {
     name?: string
     role?: string
-    isActive?: boolean
+    is_active?: boolean
     password?: string
   },
 ) {
-  return db.update(users).set(userData).where(eq(users.id, id)).returning()
+  try {
+    return db
+      .update(users)
+      .set({
+        ...userData,
+        role: userData.role as any,
+        updated_at: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning()
+  } catch (error) {
+    console.error("Error in updateSystemUser:", error)
+    throw error
+  }
 }
 
 // 獲取系統設置
 export async function getSystemSettings() {
-  return db.select().from(settings)
+  try {
+    return db.select().from(settings)
+  } catch (error) {
+    console.error("Error in getSystemSettings:", error)
+    return []
+  }
 }
 
 // 更新系統設置
-export async function updateSystemSetting(key: string, value: string) {
-  return db.update(settings).set({ value }).where(eq(settings.key, key)).returning()
+export async function updateSystemSetting(key: string, value: string, updatedBy?: string) {
+  try {
+    return db
+      .update(settings)
+      .set({
+        value,
+        updated_at: new Date(),
+        updated_by: updatedBy,
+      })
+      .where(eq(settings.key, key))
+      .returning()
+  } catch (error) {
+    console.error("Error in updateSystemSetting:", error)
+    throw error
+  }
 }
 
 // 獲取系統日誌
