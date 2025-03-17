@@ -15,17 +15,17 @@ import { Loader2 } from "lucide-react"
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams?.get("callbackUrl") || "/admin"
-  const error = searchParams?.get("error")
+  const callbackUrl = searchParams.get("callbackUrl") || "/"
+  const error = searchParams.get("error")
 
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [loginError, setLoginError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
+    setLoading(true)
     setLoginError("")
 
     try {
@@ -37,34 +37,28 @@ export default function LoginPage() {
 
       if (result?.error) {
         setLoginError("用戶名或密碼錯誤")
-        setIsLoading(false)
-        return
+        setLoading(false)
+      } else {
+        router.push(callbackUrl)
       }
-
-      router.push(callbackUrl)
     } catch (error) {
-      console.error("Login error:", error)
-      setLoginError("登入過程中發生錯誤，請稍後再試")
-      setIsLoading(false)
+      setLoginError("登入過程中發生錯誤")
+      setLoading(false)
     }
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/40">
+    <div className="flex items-center justify-center min-h-screen bg-muted/20">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">後台管理系統</CardTitle>
-          <CardDescription>請輸入您的用戶名和密碼登入系統</CardDescription>
+          <CardTitle className="text-2xl font-bold text-center">系統登入</CardTitle>
+          <CardDescription className="text-center">請輸入您的用戶名和密碼</CardDescription>
         </CardHeader>
         <CardContent>
           {(error || loginError) && (
             <Alert variant="destructive" className="mb-4">
               <AlertDescription>
-                {error === "unauthorized"
-                  ? "您沒有權限訪問管理頁面"
-                  : error === "session"
-                    ? "會話已過期，請重新登入"
-                    : loginError || "登入失敗，請檢查您的憑據"}
+                {error === "session" ? "會話已過期，請重新登入" : loginError || "登入失敗，請重試"}
               </AlertDescription>
             </Alert>
           )}
@@ -92,23 +86,22 @@ export default function LoginPage() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    登入中...
-                  </>
-                ) : (
-                  "登入"
-                )}
-              </Button>
             </div>
+
+            <Button className="w-full mt-6" type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  登入中...
+                </>
+              ) : (
+                "登入"
+              )}
+            </Button>
           </form>
         </CardContent>
-        <CardFooter>
-          <div className="text-sm text-muted-foreground">
-            測試帳號：用戶名 <span className="font-mono">admin</span>，密碼 <span className="font-mono">admin</span>
-          </div>
+        <CardFooter className="flex justify-center">
+          <p className="text-sm text-muted-foreground">測試帳號：admin / 密碼：admin</p>
         </CardFooter>
       </Card>
     </div>

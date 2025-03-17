@@ -1,18 +1,19 @@
+import type { Metadata } from "next"
+import DatabaseConnectionTest from "@/components/admin/database-connection-test"
+
+export const metadata: Metadata = {
+  title: "數據庫連接測試 | 管理後台",
+  description: "交易系統數據庫連接測試",
+}
+
 export default function DatabasePage() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">數據庫連接</h1>
+      <div>
+        <h3 className="text-lg font-medium">數據庫連接測試</h3>
+        <p className="text-sm text-muted-foreground">測試與數據庫的連接並查看連接信息</p>
       </div>
-
-      <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div className="p-6">
-          <h3 className="text-lg font-medium">數據庫狀態</h3>
-          <div className="mt-4">
-            <p className="text-muted-foreground">數據庫連接功能正在開發中...</p>
-          </div>
-        </div>
-      </div>
+      <DatabaseConnectionTest />
     </div>
   )
 }

@@ -89,8 +89,8 @@
     "nodemailer": "latest",
     "drizzle-orm": "latest",
     "nanoid": "latest",
-    "next-auth": "latest",
     "next-pwa": "latest",
+    "next-auth": "latest",
     "bcryptjs": "latest"
   },
   "devDependencies": {

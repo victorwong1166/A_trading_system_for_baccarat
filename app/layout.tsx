@@ -1,16 +1,16 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { cn } from "@/lib/utils"
-
-const inter = Inter({ subsets: ["latin"] })
+import { UpdateNotification } from "@/components/update-notification"
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
 
 export const metadata: Metadata = {
-  title: "會員管理系統",
-  description: "完整的會員管理、交易記錄和結欠跟踪解決方案",
-    generator: 'v0.dev'
+  title: "交易系統",
+  description: "百家樂交易系統",
+  generator: "v0.dev",
+  manifest: "/manifest.json",
+  themeColor: "#6366f1",
+  viewport: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
 }
 
 export default function RootLayout({
@@ -19,15 +19,23 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="zh-TW" suppressHydrationWarning>
-      <body className={cn(inter.className, "min-h-screen bg-background")}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
+    <html lang="zh-TW">
+      <head>
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="icon" href="/icons/favicon.ico" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </head>
+      <body>
+        {children}
+        <UpdateNotification />
+        <PWAInstallPrompt />
       </body>
     </html>
   )
 }
+
+import "./globals.css"
 
 
 

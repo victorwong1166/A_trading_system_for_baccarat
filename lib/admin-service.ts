@@ -2,8 +2,7 @@ import { db, isDatabaseAvailable } from "./db"
 import sql from "./db"
 import { users, systemLogs, systemSettings } from "./schema"
 import { eq } from "drizzle-orm"
-// 使用 bcryptjs 替代 bcrypt
-import { hash } from "bcryptjs"
+import { hash } from "bcrypt"
 
 // 獲取儀表板統計數據
 export async function getDashboardStats() {
@@ -96,7 +95,7 @@ export async function getSystemUsers() {
 }
 
 // 獲取單個系統用戶
-export async function getSystemUser(id: string) {
+export async function getSystemUser(id) {
   try {
     if (!isDatabaseAvailable() || !db) {
       return null
@@ -123,13 +122,7 @@ export async function getSystemUser(id: string) {
 }
 
 // 創建系統用戶
-export async function createSystemUser(userData: {
-  username: string
-  password: string
-  email: string
-  role: string
-  isActive: boolean
-}) {
+export async function createSystemUser(userData) {
   try {
     if (!isDatabaseAvailable() || !db) {
       throw new Error("數據庫未連接")
@@ -140,7 +133,7 @@ export async function createSystemUser(userData: {
       username: userData.username,
       email: userData.email,
       password: hashedPassword,
-      role: userData.role as any,
+      role: userData.role,
       is_active: userData.isActive,
     })
 
@@ -152,27 +145,18 @@ export async function createSystemUser(userData: {
 }
 
 // 更新系統用戶
-export async function updateSystemUser(
-  id: string,
-  userData: {
-    username?: string
-    email?: string
-    password?: string
-    role?: string
-    isActive?: boolean
-  },
-) {
+export async function updateSystemUser(id, userData) {
   try {
     if (!isDatabaseAvailable() || !db) {
       throw new Error("數據庫未連接")
     }
 
-    const updateData: any = {}
-
-    if (userData.username) updateData.username = userData.username
-    if (userData.email) updateData.email = userData.email
-    if (userData.role) updateData.role = userData.role
-    if (userData.isActive !== undefined) updateData.is_active = userData.isActive
+    const updateData = {
+      username: userData.username,
+      email: userData.email,
+      role: userData.role,
+      is_active: userData.isActive,
+    }
 
     // 如果提供了新密碼，則更新密碼
     if (userData.password) {
@@ -188,7 +172,7 @@ export async function updateSystemUser(
 }
 
 // 刪除系統用戶
-export async function deleteSystemUser(id: string) {
+export async function deleteSystemUser(id) {
   try {
     if (!isDatabaseAvailable() || !db) {
       throw new Error("數據庫未連接")
@@ -215,7 +199,7 @@ export async function getSystemSettings() {
     }
 
     const settings = await db.select().from(systemSettings)
-    const settingsMap = settings.reduce((acc: any, setting) => {
+    const settingsMap = settings.reduce((acc, setting) => {
       if (!acc[setting.category]) {
         acc[setting.category] = {}
       }
@@ -254,7 +238,7 @@ export async function getSystemSettings() {
 }
 
 // 更新系統設置
-export async function updateSystemSettings(settingsData: any) {
+export async function updateSystemSettings(settingsData) {
   try {
     if (!isDatabaseAvailable() || !db) {
       throw new Error("數據庫未連接")
@@ -273,15 +257,17 @@ export async function updateSystemSettings(settingsData: any) {
     }
 
     // 使用事務更新設置
-    for (const setting of settingsToUpdate) {
-      await db
-        .insert(systemSettings)
-        .values(setting)
-        .onConflictDoUpdate({
-          target: [systemSettings.category, systemSettings.key],
-          set: { value: setting.value },
-        })
-    }
+    await db.transaction(async (tx) => {
+      for (const setting of settingsToUpdate) {
+        await tx
+          .insert(systemSettings)
+          .values(setting)
+          .onConflictDoUpdate({
+            target: [systemSettings.category, systemSettings.key],
+            set: { value: setting.value },
+          })
+      }
+    })
 
     return { success: true }
   } catch (error) {
@@ -315,13 +301,7 @@ export async function getSystemLogs(limit = 100) {
 }
 
 // 添加系統日誌
-export async function addSystemLog(logData: {
-  action: string
-  userId?: string
-  username?: string
-  details?: string
-  ipAddress?: string
-}) {
+export async function addSystemLog(logData) {
   try {
     if (!isDatabaseAvailable() || !db) {
       console.warn("數據庫未連接，無法記錄系統日誌")
