@@ -2,7 +2,8 @@ import { db, isDatabaseAvailable } from "./db"
 import sql from "./db"
 import { users, systemLogs, systemSettings } from "./schema"
 import { eq } from "drizzle-orm"
-import { hash } from "bcrypt"
+// 使用 bcryptjs 替代 bcrypt
+import { hash } from "bcryptjs"
 
 // 獲取儀表板統計數據
 export async function getDashboardStats() {
@@ -257,17 +258,15 @@ export async function updateSystemSettings(settingsData) {
     }
 
     // 使用事務更新設置
-    await db.transaction(async (tx) => {
-      for (const setting of settingsToUpdate) {
-        await tx
-          .insert(systemSettings)
-          .values(setting)
-          .onConflictDoUpdate({
-            target: [systemSettings.category, systemSettings.key],
-            set: { value: setting.value },
-          })
-      }
-    })
+    for (const setting of settingsToUpdate) {
+      await db
+        .insert(systemSettings)
+        .values(setting)
+        .onConflictDoUpdate({
+          target: [systemSettings.category, systemSettings.key],
+          set: { value: setting.value },
+        })
+    }
 
     return { success: true }
   } catch (error) {

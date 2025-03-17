@@ -91,7 +91,8 @@
     "nanoid": "latest",
     "next-pwa": "latest",
     "next-auth": "latest",
-    "bcryptjs": "latest"
+    "bcryptjs": "latest",
+    "@radix-ui/react-icons": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

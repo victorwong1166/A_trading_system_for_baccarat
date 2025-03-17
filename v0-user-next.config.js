@@ -28,6 +28,7 @@ const nextConfig = withPWA({
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
+    serverComponentsExternalPackages: ["bcryptjs"],
   },
 })
 
