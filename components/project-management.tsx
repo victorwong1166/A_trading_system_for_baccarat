@@ -23,9 +23,7 @@ export interface Project {
 export default function ProjectManagement() {
   // 從本地存儲加載項目
   const loadProjects = (): Project[] => {
-    if (typeof window === "undefined") return []
-    const saved = localStorage.getItem("transaction-projects")
-    return saved ? JSON.parse(saved) : []
+    return []
   }
 
   const [projects, setProjects] = useState<Project[]>([])
@@ -42,9 +40,8 @@ export default function ProjectManagement() {
     setProjects(loadProjects())
   }, [])
 
-  // 保存項目到本地存儲
+  // 保存項目
   const saveProjects = (updatedProjects: Project[]) => {
-    localStorage.setItem("transaction-projects", JSON.stringify(updatedProjects))
     setProjects(updatedProjects)
   }
 

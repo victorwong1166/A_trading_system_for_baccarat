@@ -87,10 +87,10 @@ export async function addTestRecord() {
         100, 
         NOW(), 
         NOW(), 
-        '測試記錄', 
-        '測試客戶', 
+        '實際記錄', 
+        '實際客戶', 
         '已完成', 
-        '測試'
+        '實際'
       )
       RETURNING *
     `
@@ -100,14 +100,14 @@ export async function addTestRecord() {
 
     return {
       success: true,
-      message: "測試記錄添加成功",
+      message: "記錄添加成功",
       record: result[0],
     }
   } catch (error) {
-    console.error("添加測試記錄失敗:", error)
+    console.error("添加記錄失敗:", error)
     return {
       success: false,
-      message: "添加測試記錄失敗",
+      message: "添加記錄失敗",
       error: error instanceof Error ? error.message : String(error),
     }
   }

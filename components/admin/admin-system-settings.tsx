@@ -21,9 +21,7 @@ export default function AdminSystemSettings() {
     setIsSubmitting(true)
 
     try {
-      // 模擬API請求
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
+      // 直接返回成功，不再模擬API請求
       toast({
         title: "設置已保存",
         description: "系統設置已成功更新",

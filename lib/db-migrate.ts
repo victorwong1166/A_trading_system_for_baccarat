@@ -217,34 +217,13 @@ export async function seedInitialData() {
           "admin",
         ],
       )
-
-      // 插入默認前台用戶 (密碼: user123)
-      await executeQuery(
-        `
-        INSERT INTO users (username, password, name, email, role)
-        VALUES ($1, $2, $3, $4, $5)
-      `,
-        [
-          "user",
-          "$2b$10$dVwBhD.1pZd4hNQQR.Ck/OAUOlxu7xw5PYQwHiT8T1qJQSdBSNgZe",
-          "前台用戶",
-          "user@example.com",
-          "user",
-        ],
-      )
     }
 
-    // 插入默認系統設置
+    // 插入最小系統設置
     const settingsCheck = await executeQuery("SELECT * FROM settings LIMIT 1")
 
     if (settingsCheck.success && settingsCheck.data.length === 0) {
-      const defaultSettings = [
-        { key: "system_name", value: "交易系統", description: "系統名稱" },
-        { key: "dividend_cycle", value: "3", description: "分紅週期(天)" },
-        { key: "currency", value: "HKD", description: "貨幣單位" },
-        { key: "transaction_fee", value: "0.5", description: "交易手續費(%)" },
-        { key: "timezone", value: "Asia/Hong_Kong", description: "系統時區" },
-      ]
+      const defaultSettings = [{ key: "system_name", value: "交易系統", description: "系統名稱" }]
 
       for (const setting of defaultSettings) {
         await executeQuery(
