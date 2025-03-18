@@ -1,91 +1,122 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Eye, Edit } from "lucide-react"
 
-interface Member {
-  id: string
-  name: string
-  balance: number
-  createdAt: string
-}
+// Update the mock members data to include category and agent information
+const members = [
+  {
+    id: "M001",
+    name: "張三",
+    phone: "1234-5678",
+    balance: -2000,
+    joinDate: "2023-01-15",
+    status: "活躍",
+    category: "shareholder",
+  },
+  {
+    id: "M002",
+    name: "李四",
+    phone: "2345-6789",
+    balance: 0,
+    joinDate: "2023-02-20",
+    status: "活躍",
+    category: "agent",
+  },
+  {
+    id: "M003",
+    name: "王五",
+    phone: "3456-7890",
+    balance: -5000,
+    joinDate: "2023-03-10",
+    status: "活躍",
+    category: "regular",
+    agentId: "M002",
+    agentName: "李四",
+  },
+  {
+    id: "M004",
+    name: "趙六",
+    phone: "4567-8901",
+    balance: 1000,
+    joinDate: "2023-04-05",
+    status: "非活躍",
+    category: "regular",
+    agentId: "M002",
+    agentName: "李四",
+  },
+]
 
-export function MemberList() {
-  const [members, setMembers] = useState<Member[]>([])
-  const [loading, setLoading] = useState(true)
-  const { toast } = useToast()
-
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const response = await fetch("/api/members")
-        if (response.ok) {
-          const data = await response.json()
-          setMembers(data)
-        } else {
-          toast({
-            title: "錯誤",
-            description: "無法載入會員資料",
-            variant: "destructive",
-          })
-        }
-      } catch (error) {
-        console.error("Error fetching members:", error)
-        toast({
-          title: "錯誤",
-          description: "載入會員資料時發生錯誤",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchMembers()
-  }, [toast])
-
-  if (loading) {
-    return <div className="text-center py-4">載入中...</div>
-  }
-
-  if (members.length === 0) {
-    return <div className="text-center py-4">尚無會員資料</div>
-  }
-
+export default function MemberList() {
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>會員編號</TableHead>
-            <TableHead>姓名</TableHead>
-            <TableHead className="text-right">餘額</TableHead>
-            <TableHead>建立日期</TableHead>
-            <TableHead className="text-right">操作</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {members.map((member) => (
-            <TableRow key={member.id}>
-              <TableCell className="font-medium">{member.id}</TableCell>
-              <TableCell>{member.name}</TableCell>
-              <TableCell className="text-right">${member.balance.toFixed(2)}</TableCell>
-              <TableCell>{new Date(member.createdAt).toLocaleDateString()}</TableCell>
-              <TableCell className="text-right">
-                <Link href={`/members/${member.id}`}>
-                  <Button variant="outline" size="sm">
-                    詳情
-                  </Button>
-                </Link>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    <Card>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
+                <th className="px-4 py-3">ID</th>
+                <th className="px-4 py-3">姓名</th>
+                <th className="px-4 py-3">類別</th>
+                <th className="px-4 py-3">電話</th>
+                <th className="px-4 py-3">結餘</th>
+                <th className="px-4 py-3">加入日期</th>
+                <th className="px-4 py-3">狀態</th>
+                <th className="px-4 py-3">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {members.map((member) => (
+                <tr key={member.id} className="border-b text-sm">
+                  <td className="px-4 py-3">{member.id}</td>
+                  <td className="px-4 py-3">{member.name}</td>
+                  <td className="px-4 py-3">
+                    <Badge
+                      variant={
+                        member.category === "shareholder"
+                          ? "default"
+                          : member.category === "agent"
+                            ? "secondary"
+                            : "outline"
+                      }
+                    >
+                      {member.category === "shareholder" && "股東"}
+                      {member.category === "agent" && "代理"}
+                      {member.category === "regular" && "普通會員"}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3">{member.phone}</td>
+                  <td className="px-4 py-3" style={{ color: member.balance < 0 ? "red" : "inherit" }}>
+                    ${member.balance}
+                  </td>
+                  <td className="px-4 py-3">{member.joinDate}</td>
+                  <td className="px-4 py-3">
+                    <Badge variant={member.status === "活躍" ? "default" : "secondary"}>{member.status}</Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex space-x-2">
+                      <Link href={`/members/${member.id}`}>
+                        <Button variant="ghost" size="icon">
+                          <Eye className="h-4 w-4" />
+                          <span className="sr-only">查看</span>
+                        </Button>
+                      </Link>
+                      <Link href={`/members/${member.id}/edit`}>
+                        <Button variant="ghost" size="icon">
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">編輯</span>
+                        </Button>
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
