@@ -25,6 +25,7 @@ import {
   AlertCircle,
 } from "lucide-react"
 import type { JSX } from "react"
+import { getMemberById, getMemberTransactions, getMemberDebt } from "@/lib/member-service"
 
 type Member = {
   id: number
@@ -70,16 +71,14 @@ export default function MemberDetail({ memberId }: MemberDetailProps) {
   const fetchMemberDetails = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/members/${memberId}/transactions`)
+      const memberData = await getMemberById(Number(memberId))
+      setMember(memberData)
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch member details")
-      }
+      const transactionData = await getMemberTransactions(memberId)
+      setTransactions(transactionData)
 
-      const data = await response.json()
-      setMember(data.member)
-      setTransactions(data.transactions)
-      setTotalDebt(data.totalDebt)
+      const debtData = await getMemberDebt(memberId)
+      setTotalDebt(debtData)
     } catch (error) {
       console.error("Error fetching member details:", error)
       toast({

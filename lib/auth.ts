@@ -1,43 +1,14 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { db } from "./db"
-import { users } from "./schema"
+import { db } from "@/lib/db"
 import { eq } from "drizzle-orm"
-
-// 簡化的密碼驗證函數（實際應用中應使用加密比較）
-async function verifyCredentials(username: string, password: string) {
-  try {
-    // 在實際應用中，應該使用加密比較密碼
-    const user = await db.query.users.findFirst({
-      where: eq(users.username, username),
-    })
-
-    if (!user || user.password !== password || !user.is_active) {
-      return null
-    }
-
-    // 更新最後登入時間
-    await db.update(users).set({ last_login: new Date() }).where(eq(users.id, user.id))
-
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.username + "@example.com", // 假設的郵箱
-      role: user.role,
-    }
-  } catch (error) {
-    console.error("Verify credentials error:", error)
-    return null
-  }
-}
+import { users } from "@/lib/db/schema"
+import bcrypt from "bcryptjs"
 
 export const authOptions: NextAuthOptions = {
-  session: {
-    strategy: "jwt",
-  },
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      name: "Credentials",
       credentials: {
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
@@ -48,26 +19,33 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          // 嘗試驗證用戶憑據
-          const user = await verifyCredentials(credentials.username, credentials.password)
+          // 查詢用戶
+          const user = await db.query.users.findFirst({
+            where: (users, { eq }) => eq(users.username, credentials.username),
+          })
 
-          // 如果沒有找到用戶或密碼不匹配，則使用測試帳號
-          if (!user) {
-            // 測試帳號，僅用於開發環境
-            if (credentials.username === "admin" && credentials.password === "admin") {
-              return {
-                id: "test-admin-id",
-                name: "System Admin",
-                email: "admin@example.com",
-                role: "admin",
-              }
-            }
+          if (!user || !user.isActive) {
             return null
           }
 
-          return user
+          // 驗證密碼
+          const isValidPassword = await bcrypt.compare(credentials.password, user.password)
+
+          if (!isValidPassword) {
+            return null
+          }
+
+          // 更新最後登錄時間
+          await db.update(users).set({ lastLogin: new Date() }).where(eq(users.id, user.id))
+
+          return {
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            role: user.role,
+          }
         } catch (error) {
-          console.error("Authorization error:", error)
+          console.error("Authentication error:", error)
           return null
         }
       },
@@ -76,22 +54,71 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
         token.id = user.id
+        token.username = user.username
+        token.role = user.role
       }
       return token
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.role = token.role as string
+      if (token) {
         session.user.id = token.id as string
+        session.user.username = token.username as string
+        session.user.role = token.role as string
       }
       return session
     },
   },
   pages: {
     signIn: "/login",
+    error: "/login",
   },
-  secret: process.env.NEXTAUTH_SECRET || "your-secret-key",
+  session: {
+    strategy: "jwt",
+    maxAge: 24 * 60 * 60, // 24 hours
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+}
+
+// 權限檢查函數
+export function canAccessAdmin(role: string): boolean {
+  return ["admin", "operator"].includes(role)
+}
+
+export function canManageUsers(role: string): boolean {
+  return role === "admin"
+}
+
+export function canManageTransactions(role: string): boolean {
+  return ["admin", "operator"].includes(role)
+}
+
+export function canCancelTransactions(role: string): boolean {
+  return role === "admin"
+}
+
+// 類型定義
+declare module "next-auth" {
+  interface User {
+    id: string
+    username: string
+    role: string
+  }
+
+  interface Session {
+    user: User & {
+      id: string
+      username: string
+      role: string
+    }
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string
+    username: string
+    role: string
+  }
 }
 

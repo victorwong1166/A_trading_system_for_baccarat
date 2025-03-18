@@ -3,30 +3,26 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2 } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get("callbackUrl") || "/"
-  const error = searchParams.get("error")
-
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const [loginError, setLoginError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError("")
     setLoading(true)
-    setLoginError("")
 
     try {
       const result = await signIn("credentials", {
@@ -36,33 +32,31 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        setLoginError("用戶名或密碼錯誤")
+        setError("用戶名或密碼錯誤")
         setLoading(false)
       } else {
-        router.push(callbackUrl)
+        router.push("/admin/dashboard")
       }
     } catch (error) {
-      setLoginError("登入過程中發生錯誤")
+      setError("登錄時發生錯誤")
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/20">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">系統登入</CardTitle>
-          <CardDescription className="text-center">請輸入您的用戶名和密碼</CardDescription>
+          <CardTitle className="text-2xl font-bold text-center">百家樂交易系統</CardTitle>
+          <CardDescription className="text-center">請輸入您的用戶名和密碼登錄</CardDescription>
         </CardHeader>
         <CardContent>
-          {(error || loginError) && (
+          {error && (
             <Alert variant="destructive" className="mb-4">
-              <AlertDescription>
-                {error === "session" ? "會話已過期，請重新登入" : loginError || "登入失敗，請重試"}
-              </AlertDescription>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -87,21 +81,13 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-
-            <Button className="w-full mt-6" type="submit" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  登入中...
-                </>
-              ) : (
-                "登入"
-              )}
+            <Button type="submit" className="w-full mt-6" disabled={loading}>
+              {loading ? "登錄中..." : "登錄"}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-muted-foreground">測試帳號：admin / 密碼：admin</p>
+        <CardFooter className="text-center text-sm text-gray-500">
+          <p className="w-full">© {new Date().getFullYear()} 百家樂交易系統. 保留所有權利.</p>
         </CardFooter>
       </Card>
     </div>

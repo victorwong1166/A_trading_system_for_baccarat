@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
+import { useSession } from "next-auth/react"
 
 // 交易類型定義
 const transactionTypeFilters = [
@@ -41,208 +42,29 @@ const visibleTransactionTypeFilters = transactionTypeFilters.filter(
   (type) => type.id !== "accounting" && type.id !== "capital",
 )
 
-// 模擬交易數據 - 增加交易類型
-const transactionData = [
-  {
-    date: new Date().toISOString().split("T")[0], // 今天的日期
-    transactions: [
-      { id: "TR-001", memberId: "M001", memberName: "友短", amount: 5000, type: "buy", status: "active" },
-      { id: "TR-002", memberId: "M002", memberName: "大雄", amount: 10000, type: "buy", status: "active" },
-      {
-        id: "TR-003",
-        memberId: "M003",
-        memberName: "大雄(林林)",
-        amount: 10000,
-        type: "sign",
-        project: "A項目",
-        status: "active",
-      },
-      {
-        id: "TR-004",
-        memberId: "",
-        memberName: "",
-        amount: 20000,
-        type: "transfer",
-        project: "存款轉至帳房",
-        description: "資金轉移",
-        status: "active",
-      },
-    ],
-  },
-  {
-    date: "2023-05-14",
-    transactions: [
-      {
-        id: "TR-005",
-        memberId: "M004",
-        memberName: "大雄(花姐)",
-        amount: 10000,
-        type: "sign",
-        status: "canceled",
-        cancelReason: "記錄錯誤",
-      },
-      { id: "TR-006", memberId: "M005", memberName: "點", amount: 5000, type: "buy", status: "active" },
-      { id: "TR-007", memberId: "M006", memberName: "英", amount: 5000, type: "buy", status: "active" },
-      { id: "TR-008", memberId: "M007", memberName: "華姐", amount: 5000, type: "buy", status: "active" },
-    ],
-  },
-  {
-    date: "2023-05-13",
-    transactions: [
-      { id: "TR-009", memberId: "M001", memberName: "友短", amount: -5000, type: "return", status: "active" },
-      {
-        id: "TR-010",
-        memberId: "M002",
-        memberName: "大雄",
-        amount: 5000,
-        type: "buy",
-        status: "canceled",
-        cancelReason: "客戶要求取消",
-      },
-      {
-        id: "TR-011",
-        memberId: "M003",
-        memberName: "大雄(林林)",
-        amount: 10000,
-        type: "sign",
-        project: "B項目",
-        status: "active",
-      },
-      { id: "TR-012", memberId: "M005", memberName: "點", amount: 5000, type: "buy", status: "active" },
-      { id: "TR-013", memberId: "M006", memberName: "英", amount: -5000, type: "return", status: "active" },
-      { id: "TR-014", memberId: "M007", memberName: "華姐", amount: -5000, type: "return", status: "active" },
-      {
-        id: "TR-015",
-        memberId: "",
-        memberName: "",
-        amount: 15000,
-        type: "transfer",
-        project: "帳房轉至存款",
-        description: "資金轉移",
-        status: "active",
-      },
-    ],
-  },
-  {
-    date: "2023-05-12",
-    transactions: [
-      {
-        id: "TR-016",
-        memberId: "M003",
-        memberName: "大雄(林林)",
-        amount: 10000,
-        type: "sign",
-        project: "A項目",
-        status: "active",
-      },
-      { id: "TR-017", memberId: "M005", memberName: "點", amount: 10000, type: "deposit", status: "active" },
-      { id: "TR-018", memberId: "M006", memberName: "英", amount: 8000, type: "deposit", status: "active" },
-      {
-        id: "TR-019",
-        memberId: "",
-        memberName: "",
-        amount: -8000,
-        type: "transfer",
-        project: "帳房取款",
-        description: "資金支出",
-        status: "active",
-      },
-    ],
-  },
-  {
-    date: "2023-05-11",
-    transactions: [
-      {
-        id: "TR-020",
-        memberId: "M003",
-        memberName: "大雄(林林)",
-        amount: -30000,
-        type: "return",
-        project: "A項目",
-        status: "active",
-      },
-      { id: "TR-021", memberId: "M005", memberName: "點", amount: 10000, type: "sign", status: "active" },
-      { id: "TR-022", memberId: "M006", memberName: "英", amount: 5000, type: "buy", status: "active" },
-    ],
-  },
-  {
-    date: "2023-05-10",
-    transactions: [
-      { id: "TR-023", memberId: "M005", memberName: "點", amount: -29700, type: "redeem", status: "active" },
-      { id: "TR-024", memberId: "M006", memberName: "英", amount: -15000, type: "withdrawal", status: "active" },
-      {
-        id: "TR-025",
-        memberId: "",
-        memberName: "",
-        amount: -5000,
-        type: "labor",
-        description: "員工薪資",
-        status: "active",
-      },
-      {
-        id: "TR-026",
-        memberId: "",
-        memberName: "",
-        amount: -10000,
-        type: "misc",
-        originalType: "rent",
-        description: "場地租金",
-        status: "active",
-      },
-      {
-        id: "TR-027",
-        memberId: "",
-        memberName: "",
-        amount: -3000,
-        type: "misc",
-        originalType: "system",
-        description: "系統維護費",
-        status: "active",
-      },
-      {
-        id: "TR-028",
-        memberId: "",
-        memberName: "",
-        amount: -2000,
-        type: "misc",
-        description: "辦公用品",
-        status: "active",
-      },
-      {
-        id: "TR-029",
-        memberId: "",
-        memberName: "",
-        amount: -8000,
-        type: "accounting",
-        description: "月度帳房費用",
-        status: "active",
-      },
-      {
-        id: "TR-030",
-        memberId: "",
-        memberName: "",
-        amount: 50000,
-        type: "capital",
-        description: "追加本金",
-        status: "active",
-      },
-    ],
-  },
-]
-
 interface TransactionListProps {
   showOnlyToday?: boolean
   showAllTypes?: boolean
+  activeType?: string
 }
 
-export default function TransactionList({ showOnlyToday = false, showAllTypes = false }: TransactionListProps) {
-  const [activeType, setActiveType] = useState("all")
+export default function TransactionList({
+  showOnlyToday = false,
+  showAllTypes = false,
+  activeType: initialActiveType,
+}: TransactionListProps) {
+  const [activeType, setActiveType] = useState(initialActiveType || "all")
   const [forceListView, setForceListView] = useState(false)
   const [showCanceledTransactions, setShowCanceledTransactions] = useState(true)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState(null)
   const [cancelReason, setCancelReason] = useState("")
   const today = new Date().toISOString().split("T")[0] // 獲取今天的日期，格式為 YYYY-MM-DD
+
+  // Fix for useSession - don't destructure, check if it's defined
+  const sessionResult = useSession ? useSession() : null
+  const session = sessionResult ? sessionResult.data : null
+  const isAdmin = session?.user?.role === "admin"
 
   // 當 showAllTypes 為 true 時，自動設置 activeType 為 "all"
   useEffect(() => {
@@ -251,8 +73,61 @@ export default function TransactionList({ showOnlyToday = false, showAllTypes = 
     }
   }, [showAllTypes])
 
+  const [transactions, setTransactions] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let shouldFetch = true
+
+    const fetchTransactions = async () => {
+      try {
+        setLoading(true)
+        // 構建查詢參數
+        const params = new URLSearchParams()
+        if (showOnlyToday) {
+          params.append("date", today)
+        }
+        if (activeType !== "all") {
+          params.append("type", activeType)
+        }
+        if (!showCanceledTransactions) {
+          params.append("status", "active")
+        }
+
+        // 構建 URL
+        const url = `/api/transactions?${params.toString()}`
+
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error("Failed to fetch transactions")
+        }
+        const data = await response.json()
+        if (shouldFetch) {
+          setTransactions(data)
+        }
+      } catch (error) {
+        console.error("Error fetching transactions:", error)
+        toast({
+          title: "錯誤",
+          description: "無法載入交易記錄，請稍後再試",
+          variant: "destructive",
+        })
+      } finally {
+        if (shouldFetch) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchTransactions()
+
+    return () => {
+      shouldFetch = false
+    }
+  }, [activeType, showOnlyToday, showCanceledTransactions])
+
   // 根據 showOnlyToday 參數過濾數據
-  const filteredByDateData = showOnlyToday ? transactionData.filter((day) => day.date === today) : transactionData
+  const filteredByDateData = showOnlyToday ? transactions.filter((day) => day.date === today) : transactions
 
   // 獲取所有唯一的會員
   const allMembers = Array.from(
@@ -442,7 +317,7 @@ export default function TransactionList({ showOnlyToday = false, showAllTypes = 
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {showOnlyToday && (
         <div className="hidden md:block mb-4 overflow-x-auto -mx-6 px-6">
           <div className="flex flex-wrap gap-1.5 pb-2">
@@ -790,7 +665,8 @@ export default function TransactionList({ showOnlyToday = false, showAllTypes = 
                                 <Eye className="h-4 w-4 mr-1" />
                                 查看
                               </Button>
-                              {!isCanceled && (
+                              {/* Conditionally render the cancel button based on user role */}
+                              {!isCanceled && isAdmin && (
                                 <Button variant="ghost" size="sm" onClick={() => handleCancelTransaction(transaction)}>
                                   <Ban className="h-4 w-4 mr-1 text-red-500" />
                                   取消
@@ -844,18 +720,24 @@ export default function TransactionList({ showOnlyToday = false, showAllTypes = 
                   <p>{selectedTransaction.id}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">交易類型</p>
-                  <p>{getTransactionTypeName(selectedTransaction.type)}</p>
+                  <p className="text-sm font-medium text-gray-500">時間</p>
+                  <p>{selectedTransaction.timestamp}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">金額</p>
-                  <p className={selectedTransaction.amount < 0 ? "text-red-500" : "text-green-500"}>
-                    {selectedTransaction.amount.toLocaleString()}
-                  </p>
+                  <p className="text-sm font-medium text-gray-500">用戶ID</p>
+                  <p>{selectedTransaction.userId}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-500">會員</p>
-                  <p>{selectedTransaction.memberName || "系統"}</p>
+                  <p className="text-sm font-medium text-gray-500">用戶名</p>
+                  <p>{selectedTransaction.username}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">IP地址</p>
+                  <p>{selectedTransaction.ip}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">動作</p>
+                  <p>{selectedTransaction.action}</p>
                 </div>
               </div>
 
