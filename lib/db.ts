@@ -1,40 +1,30 @@
-import { neon, neonConfig } from "@neondatabase/serverless"
-import { drizzle } from "drizzle-orm/neon-http"
+import { drizzle } from "drizzle-orm/postgres-js"
+import postgres from "postgres"
+import * as schema from "./schema"
 
-// 配置 neon
-neonConfig.fetchOptions = {
-  cache: "no-store",
+// Check if DATABASE_URL is defined
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not defined")
 }
 
-// 檢查數據庫連接字符串是否存在
-const databaseUrl =
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_URL ||
-  process.env.POSTGRES_PRISMA_URL ||
-  process.env.POSTGRES_URL_NON_POOLING
+// Create postgres connection
+const client = postgres(process.env.DATABASE_URL)
 
-// 創建 SQL 客戶端
-let sql
-let db
+// Create drizzle instance
+export const db = drizzle(client, { schema })
 
-try {
-  if (databaseUrl) {
-    sql = neon(databaseUrl)
-    db = drizzle(sql)
-    console.log("Database connection initialized successfully")
-  } else {
-    console.warn("No database connection string provided")
+// Helper function to test database connection
+export async function testDatabaseConnection() {
+  try {
+    // Simple query to test connection
+    const result = await client`SELECT NOW()`
+    return { success: true, timestamp: result[0].now }
+  } catch (error) {
+    console.error("Database connection test failed:", error)
+    return { success: false, error: error.message }
   }
-} catch (error) {
-  console.error("Database connection initialization failed:", error)
 }
 
-// 檢查數據庫是否可用
-export function isDatabaseAvailable() {
-  return !!db && !!sql
-}
-
-// 導出 SQL 客戶端和 Drizzle 實例
-export default sql
-export { db }
+// SQL helper for raw queries
+export const sql = postgres.sql
 

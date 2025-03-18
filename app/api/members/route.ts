@@ -1,52 +1,49 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json()
-    const { name, email } = body
-
-    // Validate input
-    if (!name || !email) {
-      return NextResponse.json({ message: "姓名和Email為必填欄位" }, { status: 400 })
-    }
-
-    // Check if member with email already exists
-    const existingMember = await db.member.findUnique({
-      where: { email },
-    })
-
-    if (existingMember) {
-      return NextResponse.json({ message: "此Email已被使用" }, { status: 400 })
-    }
-
-    // Create member
-    const member = await db.member.create({
-      data: {
-        name,
-        email,
-      },
-    })
-
-    return NextResponse.json(member, { status: 201 })
-  } catch (error) {
-    console.error("Error creating member:", error)
-    return NextResponse.json({ message: "建立會員時發生錯誤" }, { status: 500 })
-  }
-}
+import { members } from "@/lib/schema"
+import { eq } from "drizzle-orm"
 
 export async function GET() {
   try {
-    const members = await db.member.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    })
+    // 獲取所有未刪除的會員
+    const allMembers = await db.select().from(members).where(eq(members.deleted, false))
 
-    return NextResponse.json(members)
+    return NextResponse.json(allMembers)
   } catch (error) {
     console.error("Error fetching members:", error)
-    return NextResponse.json({ message: "獲取會員資料時發生錯誤" }, { status: 500 })
+    return NextResponse.json({ message: "獲取會員列表失敗" }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { name } = body
+
+    if (!name || typeof name !== "string" || !name.trim()) {
+      return NextResponse.json({ message: "會員姓名為必填項" }, { status: 400 })
+    }
+
+    // 生成唯一會員ID (M + 時間戳的後6位)
+    const timestamp = Date.now().toString()
+    const memberId = `M${timestamp.slice(-6)}`
+
+    // 插入新會員
+    const result = await db.insert(members).values({
+      id: memberId,
+      name: name.trim(),
+      balance: 0,
+      deleted: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+
+    console.log("Member created successfully:", result)
+
+    return NextResponse.json({ message: "會員創建成功", memberId }, { status: 201 })
+  } catch (error) {
+    console.error("Error creating member:", error)
+    return NextResponse.json({ message: "創建會員失敗，請稍後再試" }, { status: 500 })
   }
 }
 
