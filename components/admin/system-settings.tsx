@@ -142,7 +142,7 @@ export function SystemSettings({ settings, onSettingUpdated }: SystemSettingsPro
         <Tabs defaultValue="general">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="general">一般設置</TabsTrigger>
-            <TabsTrigger value="transaction">交易設置</TabsTrigger>
+            <TabsTrigger value="transaction">交易���置</TabsTrigger>
             <TabsTrigger value="member">會員設置</TabsTrigger>
             <TabsTrigger value="security">安全設置</TabsTrigger>
           </TabsList>

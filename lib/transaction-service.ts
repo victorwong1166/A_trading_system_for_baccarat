@@ -1,5 +1,5 @@
 import { db } from "./db-connect"
-import { transactionRecords } from "./schema"
+import { transactionRecords, members } from "./schema"
 import { eq, desc, and, sql } from "drizzle-orm"
 
 // 創建交易記錄
@@ -22,12 +22,44 @@ export async function createTransaction(data) {
       updatedAt: new Date(),
     }
 
-    const result = await db.insert(transactionRecords).values(newTransaction).returning()
+    // 開始事務
+    return await db.transaction(async (tx) => {
+      // 插入交易記錄
+      const result = await tx.insert(transactionRecords).values(newTransaction).returning()
 
-    return {
-      success: true,
-      transaction: result[0],
-    }
+      // 如果有會員ID，更新會員餘額
+      if (data.memberId) {
+        // 根據交易類型決定如何更新餘額
+        let balanceChange = 0
+
+        switch (data.transactionType) {
+          case "buy_chips":
+          case "deposit":
+            balanceChange = data.amount
+            break
+          case "redeem_chips":
+          case "withdrawal":
+            balanceChange = -data.amount
+            break
+          // 可以根據需要添加更多交易類型
+        }
+
+        if (balanceChange !== 0) {
+          await tx
+            .update(members)
+            .set({
+              balance: sql`${members.balance} + ${balanceChange}`,
+              updatedAt: new Date(),
+            })
+            .where(eq(members.memberId, data.memberId))
+        }
+      }
+
+      return {
+        success: true,
+        transaction: result[0],
+      }
+    })
   } catch (error) {
     console.error("創建交易記錄失敗:", error)
     return {

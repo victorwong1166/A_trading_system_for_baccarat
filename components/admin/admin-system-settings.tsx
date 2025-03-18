@@ -492,7 +492,7 @@ export default function AdminSystemSettings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="transaction-fee">交易手續費 (%)</Label>
+                <Label htmlFor="transaction-fee">交易手��費 (%)</Label>
                 <Input id="transaction-fee" type="number" defaultValue="0.5" min="0" max="10" step="0.1" />
               </div>
 

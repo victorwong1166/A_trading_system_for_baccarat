@@ -1,10 +1,24 @@
+"use client"
+
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, TrendingDown } from "lucide-react"
 
 export default function MemberTransactions({ id }) {
+  // 實際應用中，這裡應該從API獲取數據
+  // 例如：
+  // const [transactions, setTransactions] = useState([])
+  //
+  // useEffect(() => {
+  //   async function fetchTransactions() {
+  //     const response = await fetch(`/api/members/${id}/transactions`)
+  //     const data = await response.json()
+  //     setTransactions(data.transactions)
+  //   }
+  //   fetchTransactions()
+  // }, [id])
+
   // 模擬交易數據
-  // 實際應用中，這裡會從API獲取數據
   const transactions = [
     {
       id: "TX123456",

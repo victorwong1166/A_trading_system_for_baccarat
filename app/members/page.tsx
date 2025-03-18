@@ -1,15 +1,10 @@
-import type { Metadata } from "next"
-import MemberList from "@/components/members/member-list"
-
-export const metadata: Metadata = {
-  title: "會員管理",
-  description: "管理系統中的所有會員",
-}
+import MemberDashboard from "@/components/member-dashboard"
 
 export default function MembersPage() {
   return (
-    <div className="container mx-auto py-6">
-      <MemberList />
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-8">會員管理</h1>
+      <MemberDashboard />
     </div>
   )
 }

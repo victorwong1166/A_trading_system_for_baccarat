@@ -61,12 +61,13 @@ const defaultProjects: Project[] = [
 
 // 在 QuickTransaction 組件的參數中添加 initialData 參數
 export default function QuickTransaction({ initialData = null }) {
+  // 會員搜索和選擇
   const [memberName, setMemberName] = useState("")
-  const [amount, setAmount] = useState("")
-  const [transactionType, setTransactionType] = useState("buy")
   const [filteredMembers, setFilteredMembers] = useState([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedMember, setSelectedMember] = useState(null)
+  const [amount, setAmount] = useState("")
+  const [transactionType, setTransactionType] = useState("buy")
   const [itemDescription, setItemDescription] = useState("")
   const [activeCategory, setActiveCategory] = useState("basic")
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false)
